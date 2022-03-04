@@ -1,4 +1,3 @@
-import {glTFLoader} from "./dependencies/bundles/B3dmParser";
 
 // Define crs projection that we will use (taken from https://epsg.io/2154, Proj4js section)
 itowns.proj4.defs('EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
@@ -133,6 +132,7 @@ view.addLayer(olayer, view.tileLayer).then(function addWfsLayer(orientedImageLay
     var altitude = new itowns.THREE.Vector3();
 
     view.controls.transformationPositionPickOnTheGround = (position) => {
+        console.log(view.camera.position('EPSG:4326'));
         position.copy(orientedImageLayer.mostNearPano(position).position);
         altitude.copy(position).normalize().multiplyScalar(3);
         return position.sub(altitude);
@@ -147,7 +147,7 @@ debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
 
 // Listen for globe full initialisation event
 view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
-
+    
     // eslint-disable-next-line no-console
     console.info('Globe initialized');
 
@@ -158,12 +158,38 @@ view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
 });
 
 
-var $3dTilesLayerDiscreteLOD = new itowns.C3DTilesLayer('3d-tiles-discrete-lod', {
-    name: 'DiscreteLOD',
-    sseThreshold: 0.05,
-    source: new itowns.C3DTilesSource({
-        url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/1.0/TilesetWithDiscreteLOD/tileset.json',
-    }),
-}, view);
+var promiseCollada;
+var lstCoordDiamonds = [[2.33481381, 48.85060296], [2.334227042670147, 48.8501519671031], [2.3347466844623392, 48.85018249776106]];
 
-itowns.View.prototype.addLayer.call(view, $3dTilesLayerDiscreteLOD);
+function loadDiamonds() {
+
+    for (let i=0; i < lstCoordDiamonds.length; i++) {
+        promiseCollada = ThreeLoader.load('Collada', 'layers/ColladaLayers/diamonds1.dae')
+        .then(collada => {
+            var model = collada.scene;
+
+            // building coordinate
+            var coord = new itowns.Coordinates('EPSG:4326', lstCoordDiamonds[i][0], lstCoordDiamonds[i][1], 38);
+            var colladaID = view.mainLoop.gfxEngine.getUniqueThreejsLayer();
+
+            model.position.copy(coord.as(view.referenceCrs));
+            // align up vector with geodesic normal
+            model.lookAt(model.position.clone().add(coord.geodesicNormal));
+            // user rotate building to align with ortho image
+            model.rotateZ(-Math.PI * 0.2);
+            model.scale.set(0.2, 0.2, 0.2);
+
+            // set camera's layer to do not disturb the picking
+            model.traverse(function _(obj) { obj.layers.set(colladaID); });
+            view.camera.camera3D.layers.enable(colladaID);
+
+            // update coordinate of the mesh
+            model.updateMatrixWorld();
+
+            view.scene.add(model);
+            view.notifyChange();
+        });
+    }
+}
+
+loadDiamonds();
