@@ -1,3 +1,5 @@
+import {glTFLoader} from "./dependencies/bundles/B3dmParser";
+
 // Define crs projection that we will use (taken from https://epsg.io/2154, Proj4js section)
 itowns.proj4.defs('EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
 
@@ -154,3 +156,14 @@ view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
     view.notifyChange(view.camera.camera3D);
 
 });
+
+
+var $3dTilesLayerDiscreteLOD = new itowns.C3DTilesLayer('3d-tiles-discrete-lod', {
+    name: 'DiscreteLOD',
+    sseThreshold: 0.05,
+    source: new itowns.C3DTilesSource({
+        url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/1.0/TilesetWithDiscreteLOD/tileset.json',
+    }),
+}, view);
+
+itowns.View.prototype.addLayer.call(view, $3dTilesLayerDiscreteLOD);
