@@ -132,7 +132,7 @@ view.addLayer(olayer, view.tileLayer).then(function addWfsLayer(orientedImageLay
     var altitude = new itowns.THREE.Vector3();
 
     view.controls.transformationPositionPickOnTheGround = (position) => {
-        console.log(view.camera.position('EPSG:4326'));
+        //console.log(view.camera.position('EPSG:4326'));
         position.copy(orientedImageLayer.mostNearPano(position).position);
         altitude.copy(position).normalize().multiplyScalar(3);
         return position.sub(altitude);
@@ -157,9 +157,37 @@ view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
 
 });
 
+// Among us
+var promiseGLTF = ThreeLoader.load('GLTF', 'layers/GLTFLayers/among_us/scene.gltf')
+.then(gltf => {
+    var model = gltf.scene;
+
+    // building coordinate
+    var coord = new itowns.Coordinates('EPSG:4326', 2.33481381, 48.85060296, 38);
+    var colladaID = view.mainLoop.gfxEngine.getUniqueThreejsLayer();
+
+    model.position.copy(coord.as(view.referenceCrs));
+    // align up vector with geodesic normal
+    model.lookAt(model.position.clone().add(coord.geodesicNormal));
+    // user rotate building to align with ortho image
+    //model.rotation.x = 45;
+    //model.rotateZ(Math.PI * 0.2);
+    model.scale.set(0.04, 0.04, 0.04);
+
+    // set camera's layer to do not disturb the picking
+    model.traverse(function _(obj) { obj.layers.set(colladaID); });
+    view.camera.camera3D.layers.enable(colladaID);
+
+    // update coordinate of the mesh
+    model.updateMatrixWorld();
+
+    view.scene.add(model);
+    view.notifyChange();
+});
+
 
 var promiseCollada;
-var lstCoordDiamonds = [[2.33481381, 48.85060296], [2.334227042670147, 48.8501519671031], [2.3347466844623392, 48.85018249776106]];
+var lstCoordDiamonds = [[2.334227042670147, 48.8501519671031], [2.3347466844623392, 48.85018249776106]];
 
 function loadDiamonds() {
 
