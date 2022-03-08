@@ -1,5 +1,3 @@
-import {glTFLoader} from "./dependencies/bundles/B3dmParser";
-
 // Define crs projection that we will use (taken from https://epsg.io/2154, Proj4js section)
 itowns.proj4.defs('EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
 
@@ -157,13 +155,38 @@ view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
 
 });
 
+window.addEventListener("keydown", function (event) {
+    let cameraPosition = view.camera.position('EPSG:4978');
+    let cameraTargetPosition = view.controls.getCameraTargetPosition();
+    let vectorDirection = {x:cameraTargetPosition.x-cameraPosition.x, y:cameraTargetPosition.y-cameraPosition.y, z:cameraTargetPosition.z-cameraPosition.z};
+    let vectorDirectionNorme = normalize(vectorDirection);
+    switch (event.keyCode) {
+        case 81:
+            //left
+            console.log("left");
+            console.log(view.camera.position('EPSG:4978'));
+            console.log(cameraTargetPosition);
+            break;
+        case 90:
+            //up
+            console.log("up");
+            console.log(cameraPosition );
+            console.log(cameraTargetPosition);
+            console.log(vectorDirection);
 
-var $3dTilesLayerDiscreteLOD = new itowns.C3DTilesLayer('3d-tiles-discrete-lod', {
-    name: 'DiscreteLOD',
-    sseThreshold: 0.05,
-    source: new itowns.C3DTilesSource({
-        url: 'https://raw.githubusercontent.com/CesiumGS/3d-tiles-samples/master/1.0/TilesetWithDiscreteLOD/tileset.json',
-    }),
-}, view);
-
-itowns.View.prototype.addLayer.call(view, $3dTilesLayerDiscreteLOD);
+            view.camera.position.set(cameraPosition.x)
+            break;
+        case 82:
+            //right
+            console.log("right");
+            break;
+        case 83:
+            //down
+            console.log("down");
+            break;
+        case 32:
+            console.log("case spacebar")
+            break;
+        
+    }
+  });
